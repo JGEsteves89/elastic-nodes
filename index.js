@@ -1,3 +1,9 @@
+const MASS = 10;
+const LENG = 50;
+const STIF = 1;
+const SIZE = 20;
+const DAMP = 0.9;
+
 function drawTextDebug(ctx, str, pos) {
 	var fontsize = 10;
 	var fontface = 'verdana';
@@ -51,47 +57,54 @@ class Size {
 		this.h = h;
 	}
 }
+class Particle {
+	constructor(x, y) {
+		this.p = new Vector(x, y);
+		this.m = MASS;
+		this.d = DAMP;
+		this.s = new Size(SIZE, SIZE);
+		this.vel = new Vector(0, 0);
+		this.for = new Vector(0, 0);
+		this.debug = '';
+	}
+	update() {
+		const ac = this.for.mults(1 / this.m);
+		this.vel = this.vel.add(ac.mults(1 / 2));
+		this.p = this.p.add(this.vel);
+		this.vel = this.vel.mults(this.d);
+		this.for = new Vector(0, 0);
+		// prettier-ignore
+		this.debug = `Vel {x: ${this.vel.x.toFixed(2)}, y:${this.vel.y.toFixed(2)}}`;
+	}
+	draw() {
+		ctx.fillStyle = 'yellow';
+		ctx.fillRect(this.p.x, this.p.y, this.s.w, this.s.h);
+		//drawTextDebug(ctx, this.debug, this.p.add(-SIZE, -SIZE * 2));
+	}
+}
 class Link {
-	constructor(
-		p1x,
-		p1y,
-		p2x,
-		p2y,
-		defaultLength = 50,
-		stiffness = 1,
-		defaultSize = 20
-	) {
-		this.p1 = new Vector(p1x, p1y);
-		this.p2 = new Vector(p2x, p2y);
-		this.s = new Size(defaultSize, defaultSize);
+	constructor(p1, p2, defaultLength = LENG, stiffness = STIF) {
+		this.p1 = p1;
+		this.p2 = p2;
+
 		this.l = defaultLength;
 		this.st = stiffness;
-		this.debug = '';
-		this.m = 10;
-		this.d = 0.9;
-		this.vel = new Vector(0, 0);
 	}
 	update() {
 		//F = −kx
 		const force = this.st * this.stretch();
 		const df = this.dir().norm().mults(force);
-		const ac = df.mults(1 / this.m);
-		this.vel = this.vel.add(ac.mults(1 / 2));
-		this.p1 = this.p1.add(this.vel);
-		this.p2 = this.p2.add(this.vel.mults(-1));
-		this.vel = this.vel.mults(this.d);
-		this.debug = `Vel {x: ${this.vel.x.toFixed(2)}, y:${this.vel.y.toFixed(
-			2
-		)}}`;
+		this.p1.for = this.p1.for.add(df);
+		this.p2.for = this.p2.for.add(df.mults(-1));
 	}
 	stretch() {
 		return (this.dist() - this.l) / this.l;
 	}
 	dist() {
-		return this.p1.dist(this.p2);
+		return this.p1.p.dist(this.p2.p);
 	}
 	dir() {
-		return this.p1.dir(this.p2);
+		return this.p1.p.dir(this.p2.p);
 	}
 	draw(ctx) {
 		ctx.lineWidth = 1;
@@ -104,25 +117,50 @@ class Link {
 		}
 
 		ctx.beginPath();
-		ctx.moveTo(this.p1.x + this.s.w / 2, this.p1.y + this.s.h / 2);
-		ctx.lineTo(this.p2.x + this.s.w / 2, this.p2.y + this.s.h / 2);
+		ctx.moveTo(this.p1.p.x + this.p1.s.w / 2, this.p1.p.y + this.p1.s.h / 2);
+		ctx.lineTo(this.p2.p.x + this.p2.s.w / 2, this.p2.p.y + this.p2.s.h / 2);
 		ctx.stroke();
-
-		ctx.fillStyle = 'yellow';
-		ctx.fillRect(this.p1.x, this.p1.y, this.s.w, this.s.h);
-		ctx.fillRect(this.p2.x, this.p2.y, this.s.w, this.s.h);
-
-		drawTextDebug(ctx, this.debug, this.p1.add(0, -50));
 	}
 }
 document.addEventListener('DOMContentLoaded', function () {
 	draw();
 });
-var link = new Link(100, 100, 500, 500);
-function draw() {
-	// Request redraw after this has finish
-	requestAnimationFrame(draw);
+var particles = [
+	new Particle(100, 100),
+	new Particle(500, 500),
+	new Particle(0, 500),
+	new Particle(500, 0),
+	new Particle(0, 10),
+	new Particle(700, 2),
+];
+var links = [
+	new Link(particles[0], particles[1]),
+	new Link(particles[1], particles[2]),
+	new Link(particles[1], particles[3]),
+	new Link(particles[0], particles[3]),
+	new Link(particles[4], particles[5]),
+	new Link(particles[2], particles[5]),
+];
 
+for (let i = 0; i < 20; i++) {
+	const xxx = Math.ceil(Math.random() * 1000);
+	const yyy = Math.ceil(Math.random() * 1000);
+	console.log(xxx, yyy);
+	particles.push(new Particle(xxx, yyy));
+	links.push(
+		new Link(particles[particles.length - 2], particles[particles.length - 1])
+	);
+}
+for (let i = 0; i < 20; i++) {
+	const iii = Math.floor(Math.random() * particles.length);
+	const jjj = Math.floor(Math.random() * particles.length);
+	if (iii !== jjj) {
+		console.log(iii, jjj);
+		links.push(new Link(particles[iii], particles[jjj]));
+	}
+}
+console.log(particles);
+function draw() {
 	// Get canvas and context element
 	htmlCanvas = document.getElementById('c1');
 	ctx = htmlCanvas.getContext('2d');
@@ -135,8 +173,20 @@ function draw() {
 	ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
 	// Update section
-	link.update();
+	for (const link of links) {
+		link.update();
+	}
+	for (const particle of particles) {
+		particle.update();
+	}
 
 	// Draw section
-	link.draw(ctx);
+	for (const link of links) {
+		link.draw(ctx);
+	}
+	for (const particle of particles) {
+		particle.draw(ctx);
+	}
+	// Request redraw after this has finish
+	requestAnimationFrame(draw);
 }
