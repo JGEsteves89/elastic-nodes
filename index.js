@@ -1,6 +1,8 @@
-const MASS = 1;
-const LENG = 200;
-const STIF = 1;
+const MASS = 10;
+const LENG = 50;
+const APAR = LENG * 2;
+const STIF = 2;
+const KTIF = 10;
 const SIZE = 20;
 const DAMP = 0.8;
 
@@ -89,51 +91,21 @@ class Particle {
 		this.debug = `Vel {x: ${this.vel.x.toFixed(2)}, y:${this.vel.y.toFixed(2)}}`;
 	}
 
-	isIntersecting(other) {
-		if (this.left() >= other.right()) return false;
-		if (this.right() <= other.left()) return false;
-		if (this.top() >= other.bottom()) return false;
-		if (this.bottom() <= other.top()) return false;
-
-		return true;
-	}
-
-	intersectionCorrection(other) {
-		if (!this.isIntersecting(other)) return new Vector(0, 0);
-
-		const dvec = new Vector(9999999, 9999999);
-		if (this.right() > other.left() && this.right() < other.right()) {
-			dvec.x = other.left() - this.right();
-		}
-		if (this.left() > other.left() && this.left() < other.right()) {
-			dvec.x = other.right() - this.left();
-		}
-
-		if (this.top() < other.bottom() && this.top() > other.top()) {
-			dvec.y = other.bottom() - this.top();
-		}
-
-		if (this.bottom() < other.bottom() && this.bottom() > other.top()) {
-			dvec.y = other.top() - this.bottom();
-		}
-		if (Math.abs(dvec.x) < Math.abs(dvec.y)) {
-			dvec.y = 0;
-		} else {
-			dvec.x = 0;
-		}
-		return dvec;
-	}
-
-	checkBounds(me, others) {
+	separate(me, others) {
 		for (let i = 0; i < others.length; i++) {
 			if (i !== me) {
 				const other = others[i];
-				if (this.isIntersecting(other)) {
-					this.p = this.p.add(this.intersectionCorrection(other));
+				const dist = this.p.dist(other.p);
+				if (dist < APAR) {
+					const force = KTIF * ((APAR - dist) / APAR);
+					const df = this.p.dir(other.p).norm().mults(force);
+					this.for = this.for.add(df.mults(-1));
+					other.for = other.for.add(df);
 				}
 			}
 		}
 	}
+
 	draw() {
 		ctx.fillStyle = 'yellow';
 		ctx.fillRect(this.p.x, this.p.y, this.s.w, this.s.h);
@@ -185,36 +157,38 @@ document.addEventListener('DOMContentLoaded', function () {
 	draw();
 });
 var particles = [
-	new Particle(100, 100),
-	new Particle(500, 500),
-	new Particle(0, 500),
-	new Particle(500, 0),
-	new Particle(0, 10),
-	new Particle(700, 2),
+	// new Particle(100, 100),
+	// new Particle(500, 500),
+	// new Particle(0, 500),
+	// new Particle(500, 0),
+	// new Particle(0, 10),
+	// new Particle(700, 2),
 ];
 var links = [
-	new Link(particles[0], particles[1]),
-	new Link(particles[1], particles[2]),
-	new Link(particles[1], particles[3]),
-	new Link(particles[0], particles[3]),
-	new Link(particles[4], particles[5]),
-	new Link(particles[2], particles[5]),
+	// new Link(particles[0], particles[1]),
+	// new Link(particles[1], particles[2]),
+	// new Link(particles[1], particles[3]),
+	// new Link(particles[0], particles[3]),
+	// new Link(particles[4], particles[5]),
+	// new Link(particles[2], particles[5]),
 ];
+const count = 20;
+const count2 = 3;
 
-for (let i = 0; i < 20; i++) {
+for (let i = 0; i < count; i++) {
 	const xxx = Math.ceil(Math.random() * 1000);
 	const yyy = Math.ceil(Math.random() * 1000);
-	console.log(xxx, yyy);
 	particles.push(new Particle(xxx, yyy));
-	links.push(
-		new Link(particles[particles.length - 2], particles[particles.length - 1])
-	);
+	if (i !== 0) {
+		links.push(
+			new Link(particles[particles.length - 2], particles[particles.length - 1])
+		);
+	}
 }
-for (let i = 0; i < 20; i++) {
+for (let i = 0; i < count2; i++) {
 	const iii = Math.floor(Math.random() * particles.length);
 	const jjj = Math.floor(Math.random() * particles.length);
 	if (iii !== jjj) {
-		console.log(iii, jjj);
 		links.push(new Link(particles[iii], particles[jjj]));
 	}
 }
@@ -233,7 +207,7 @@ function draw() {
 
 	// Update section
 	for (let i = 0; i < particles.length; i++) {
-		particles[i].checkBounds(i, particles);
+		particles[i].separate(i, particles);
 	}
 	for (const link of links) {
 		link.update();
@@ -252,191 +226,3 @@ function draw() {
 	// Request redraw after this has finish
 	requestAnimationFrame(draw);
 }
-
-// function test(str, actual, expected) {
-// 	if (actual.x === expected.x && actual.y === expected.y) {
-// 		console.log('PASS');
-// 	} else {
-// 		console.log('FAIL', '-', str);
-// 		console.log('Expected', ':', expected);
-// 		console.log('Actual', ':', actual);
-// 	}
-// }
-// test(
-// 	`
-//     ┌──────┬┬──────┐
-//     │      ││      │
-//     │      ││      │
-//     │      ││      │
-//     └──────┴┴──────┘`,
-// 	new Particle(100, 400).intersectionCorrection(new Particle(299, 400)),
-// 	new Vector(-1, 0)
-// );
-// test(
-// 	`
-//     ┌──────┬┬──────┐
-//     │      ││      │
-//     │   B  ││   A  │
-//     │      ││      │
-//     └──────┴┴──────┘`,
-// 	new Particle(299, 400).intersectionCorrection(new Particle(100, 400)),
-// 	new Vector(1, 0)
-// );
-// test(
-// 	`
-//     ┌┬──────┬┐
-//     ││      ││
-//     ││      ││
-//     ││      ││
-//     └┴──────┴┘
-//    `,
-// 	new Particle(100, 400).intersectionCorrection(new Particle(101, 400)),
-// 	new Vector(-199, 0)
-// );
-// test(
-// 	`
-//     ┌┬──────┬┐
-//     ││      ││
-//     ││      ││
-//     ││      ││
-//     └┴──────┴┘
-//    `,
-// 	new Particle(101, 400).intersectionCorrection(new Particle(100, 400)),
-// 	new Vector(199, 0)
-// );
-// test(
-// 	`
-//     ┌───────┐
-//     │       │
-//     │      ┌┼──────┐
-//     │      ││      │
-//     └──────┼┘      │
-//            │       │
-//            └───────┘`,
-// 	new Particle(100, 400).intersectionCorrection(new Particle(299, 500)),
-// 	new Vector(-1, 0)
-// );
-// test(
-// 	`
-//     ┌───────┐ ┌───────┐
-//     │       │ │       │
-//     │       │ │       │
-//     │       │ │       │
-//     └───────┘ └───────┘
-//  `,
-// 	new Particle(100, 400).intersectionCorrection(new Particle(301, 400)),
-// 	new Vector(0, 0)
-// );
-// test(
-// 	`
-//     ┌───────┬───────┐
-//     │       │       │
-//     │       │       │
-//     │       │       │
-//     └───────┴───────┘
-
-//  `,
-// 	new Particle(100, 400).intersectionCorrection(new Particle(300, 400)),
-// 	new Vector(0, 0)
-// );
-
-// test(
-// 	`
-//     ┌───────┐
-//     │       │
-//     │       │
-//     ├───────┤
-//     ├───────┤
-//     │       │
-//     │       │
-//     └───────┘
-//     `,
-// 	new Particle(100, 400).intersectionCorrection(new Particle(100, 599)),
-// 	new Vector(0, -1)
-// );
-// test(
-// 	`
-//     ┌───────┐
-//     │       │
-//     │   B   │
-//     ├───────┤
-//     ├───────┤
-//     │   A   │
-//     │       │
-//     └───────┘
-//     `,
-// 	new Particle(100, 599).intersectionCorrection(new Particle(100, 400)),
-// 	new Vector(0, 1)
-// );
-// test(
-// 	`
-//     ┌───────┐
-//     ├───────┤
-//     │       │
-//     │       │
-//     ├───────┤
-//     └───────┘
-//     `,
-// 	new Particle(100, 400).intersectionCorrection(new Particle(100, 401)),
-// 	new Vector(0, -199)
-// );
-
-// test(
-// 	`
-//     ┌───────┐
-//     ├───────┤
-//     │   B   │
-//     │   A   │
-//     ├───────┤
-//     └───────┘
-//     `,
-// 	new Particle(100, 401).intersectionCorrection(new Particle(100, 400)),
-// 	new Vector(0, 199)
-// );
-// test(
-// 	`
-//     ┌───────┐
-//     │       │
-//     │       │
-//  ┌──┼────┐  │
-//  │  └────┼──┘
-//  │       │
-//  │       │
-//  └───────┘
-
-//     `,
-// 	new Particle(100, 400).intersectionCorrection(new Particle(0, 599)),
-// 	new Vector(0, -1)
-// );
-// test(
-// 	`
-//     ┌───────┐
-//     │       │
-//     │       │
-//     │       │
-//     └───────┘
-
-//     ┌───────┐
-//     │       │
-//     │       │
-//     │       │
-//     └───────┘
-//     `,
-// 	new Particle(100, 400).intersectionCorrection(new Particle(301, 400)),
-// 	new Vector(0, 0)
-// );
-// test(
-// 	`
-//     ┌───────┐
-//     │       │
-//     │       │
-//     │       │
-//     ├───────┤
-//     │       │
-//     │       │
-//     │       │
-//     └───────┘
-//     `,
-// 	new Particle(100, 400).intersectionCorrection(new Particle(300, 400)),
-// 	new Vector(0, 0)
-// );
