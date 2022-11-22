@@ -1,8 +1,8 @@
-const MASS = 10;
-const LENG = 50;
+const MASS = 1;
+const LENG = 200;
 const STIF = 1;
 const SIZE = 20;
-const DAMP = 0.9;
+const DAMP = 0.8;
 
 function drawTextDebug(ctx, str, pos) {
 	var fontsize = 10;
@@ -67,6 +67,18 @@ class Particle {
 		this.for = new Vector(0, 0);
 		this.debug = '';
 	}
+	right() {
+		return this.p.x + this.s.w;
+	}
+	left() {
+		return this.p.x;
+	}
+	bottom() {
+		return this.p.y + this.s.h;
+	}
+	top() {
+		return this.p.y;
+	}
 	update() {
 		const ac = this.for.mults(1 / this.m);
 		this.vel = this.vel.add(ac.mults(1 / 2));
@@ -76,9 +88,56 @@ class Particle {
 		// prettier-ignore
 		this.debug = `Vel {x: ${this.vel.x.toFixed(2)}, y:${this.vel.y.toFixed(2)}}`;
 	}
+
+	isIntersecting(other) {
+		if (this.left() >= other.right()) return false;
+		if (this.right() <= other.left()) return false;
+		if (this.top() >= other.bottom()) return false;
+		if (this.bottom() <= other.top()) return false;
+
+		return true;
+	}
+
+	intersectionCorrection(other) {
+		if (!this.isIntersecting(other)) return new Vector(0, 0);
+
+		const dvec = new Vector(9999999, 9999999);
+		if (this.right() > other.left() && this.right() < other.right()) {
+			dvec.x = other.left() - this.right();
+		}
+		if (this.left() > other.left() && this.left() < other.right()) {
+			dvec.x = other.right() - this.left();
+		}
+
+		if (this.top() < other.bottom() && this.top() > other.top()) {
+			dvec.y = other.bottom() - this.top();
+		}
+
+		if (this.bottom() < other.bottom() && this.bottom() > other.top()) {
+			dvec.y = other.top() - this.bottom();
+		}
+		if (Math.abs(dvec.x) < Math.abs(dvec.y)) {
+			dvec.y = 0;
+		} else {
+			dvec.x = 0;
+		}
+		return dvec;
+	}
+
+	checkBounds(me, others) {
+		for (let i = 0; i < others.length; i++) {
+			if (i !== me) {
+				const other = others[i];
+				if (this.isIntersecting(other)) {
+					this.p = this.p.add(this.intersectionCorrection(other));
+				}
+			}
+		}
+	}
 	draw() {
 		ctx.fillStyle = 'yellow';
 		ctx.fillRect(this.p.x, this.p.y, this.s.w, this.s.h);
+		ctx.strokeRect(this.p.x, this.p.y, this.s.w, this.s.h);
 		//drawTextDebug(ctx, this.debug, this.p.add(-SIZE, -SIZE * 2));
 	}
 }
@@ -173,6 +232,9 @@ function draw() {
 	ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
 	// Update section
+	for (let i = 0; i < particles.length; i++) {
+		particles[i].checkBounds(i, particles);
+	}
 	for (const link of links) {
 		link.update();
 	}
@@ -190,3 +252,191 @@ function draw() {
 	// Request redraw after this has finish
 	requestAnimationFrame(draw);
 }
+
+// function test(str, actual, expected) {
+// 	if (actual.x === expected.x && actual.y === expected.y) {
+// 		console.log('PASS');
+// 	} else {
+// 		console.log('FAIL', '-', str);
+// 		console.log('Expected', ':', expected);
+// 		console.log('Actual', ':', actual);
+// 	}
+// }
+// test(
+// 	`
+//     ┌──────┬┬──────┐
+//     │      ││      │
+//     │      ││      │
+//     │      ││      │
+//     └──────┴┴──────┘`,
+// 	new Particle(100, 400).intersectionCorrection(new Particle(299, 400)),
+// 	new Vector(-1, 0)
+// );
+// test(
+// 	`
+//     ┌──────┬┬──────┐
+//     │      ││      │
+//     │   B  ││   A  │
+//     │      ││      │
+//     └──────┴┴──────┘`,
+// 	new Particle(299, 400).intersectionCorrection(new Particle(100, 400)),
+// 	new Vector(1, 0)
+// );
+// test(
+// 	`
+//     ┌┬──────┬┐
+//     ││      ││
+//     ││      ││
+//     ││      ││
+//     └┴──────┴┘
+//    `,
+// 	new Particle(100, 400).intersectionCorrection(new Particle(101, 400)),
+// 	new Vector(-199, 0)
+// );
+// test(
+// 	`
+//     ┌┬──────┬┐
+//     ││      ││
+//     ││      ││
+//     ││      ││
+//     └┴──────┴┘
+//    `,
+// 	new Particle(101, 400).intersectionCorrection(new Particle(100, 400)),
+// 	new Vector(199, 0)
+// );
+// test(
+// 	`
+//     ┌───────┐
+//     │       │
+//     │      ┌┼──────┐
+//     │      ││      │
+//     └──────┼┘      │
+//            │       │
+//            └───────┘`,
+// 	new Particle(100, 400).intersectionCorrection(new Particle(299, 500)),
+// 	new Vector(-1, 0)
+// );
+// test(
+// 	`
+//     ┌───────┐ ┌───────┐
+//     │       │ │       │
+//     │       │ │       │
+//     │       │ │       │
+//     └───────┘ └───────┘
+//  `,
+// 	new Particle(100, 400).intersectionCorrection(new Particle(301, 400)),
+// 	new Vector(0, 0)
+// );
+// test(
+// 	`
+//     ┌───────┬───────┐
+//     │       │       │
+//     │       │       │
+//     │       │       │
+//     └───────┴───────┘
+
+//  `,
+// 	new Particle(100, 400).intersectionCorrection(new Particle(300, 400)),
+// 	new Vector(0, 0)
+// );
+
+// test(
+// 	`
+//     ┌───────┐
+//     │       │
+//     │       │
+//     ├───────┤
+//     ├───────┤
+//     │       │
+//     │       │
+//     └───────┘
+//     `,
+// 	new Particle(100, 400).intersectionCorrection(new Particle(100, 599)),
+// 	new Vector(0, -1)
+// );
+// test(
+// 	`
+//     ┌───────┐
+//     │       │
+//     │   B   │
+//     ├───────┤
+//     ├───────┤
+//     │   A   │
+//     │       │
+//     └───────┘
+//     `,
+// 	new Particle(100, 599).intersectionCorrection(new Particle(100, 400)),
+// 	new Vector(0, 1)
+// );
+// test(
+// 	`
+//     ┌───────┐
+//     ├───────┤
+//     │       │
+//     │       │
+//     ├───────┤
+//     └───────┘
+//     `,
+// 	new Particle(100, 400).intersectionCorrection(new Particle(100, 401)),
+// 	new Vector(0, -199)
+// );
+
+// test(
+// 	`
+//     ┌───────┐
+//     ├───────┤
+//     │   B   │
+//     │   A   │
+//     ├───────┤
+//     └───────┘
+//     `,
+// 	new Particle(100, 401).intersectionCorrection(new Particle(100, 400)),
+// 	new Vector(0, 199)
+// );
+// test(
+// 	`
+//     ┌───────┐
+//     │       │
+//     │       │
+//  ┌──┼────┐  │
+//  │  └────┼──┘
+//  │       │
+//  │       │
+//  └───────┘
+
+//     `,
+// 	new Particle(100, 400).intersectionCorrection(new Particle(0, 599)),
+// 	new Vector(0, -1)
+// );
+// test(
+// 	`
+//     ┌───────┐
+//     │       │
+//     │       │
+//     │       │
+//     └───────┘
+
+//     ┌───────┐
+//     │       │
+//     │       │
+//     │       │
+//     └───────┘
+//     `,
+// 	new Particle(100, 400).intersectionCorrection(new Particle(301, 400)),
+// 	new Vector(0, 0)
+// );
+// test(
+// 	`
+//     ┌───────┐
+//     │       │
+//     │       │
+//     │       │
+//     ├───────┤
+//     │       │
+//     │       │
+//     │       │
+//     └───────┘
+//     `,
+// 	new Particle(100, 400).intersectionCorrection(new Particle(300, 400)),
+// 	new Vector(0, 0)
+// );
