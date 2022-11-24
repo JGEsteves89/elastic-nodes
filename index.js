@@ -1,10 +1,10 @@
 const MASS = 10;
 const LENG = 50;
 const APAR = LENG * 2;
-const STIF = 2;
+const STIF = 3;
 const KTIF = 10;
 const SIZE = 20;
-const DAMP = 0.8;
+const DAMP = 0.9;
 
 function drawTextDebug(ctx, str, pos) {
 	var fontsize = 10;
@@ -172,8 +172,9 @@ var links = [
 	// new Link(particles[4], particles[5]),
 	// new Link(particles[2], particles[5]),
 ];
+
 const count = 20;
-const count2 = 3;
+const count2 = 5;
 
 for (let i = 0; i < count; i++) {
 	const xxx = Math.ceil(Math.random() * 1000);
@@ -193,6 +194,8 @@ for (let i = 0; i < count2; i++) {
 	}
 }
 console.log(particles);
+
+var selParticle = null;
 function draw() {
 	// Get canvas and context element
 	htmlCanvas = document.getElementById('c1');
@@ -201,6 +204,30 @@ function draw() {
 	// Resize to the size of the canvas
 	ctx.canvas.width = window.innerWidth;
 	ctx.canvas.height = window.innerHeight;
+
+	ctx.canvas.onmousedown = function (e) {
+		for (const part of particles) {
+			if (
+				e.x > part.left() &&
+				e.x < part.right() &&
+				e.y > part.top() &&
+				e.y < part.bottom()
+			) {
+				selParticle = part;
+				return;
+			}
+		}
+		selParticle = null;
+	};
+	ctx.canvas.onmouseup = function (e) {
+		selParticle = null;
+	};
+
+	ctx.canvas.onmousemove = function (e) {
+		if (!selParticle) return;
+		selParticle.p.x = e.x;
+		selParticle.p.y = e.y;
+	};
 
 	// Clear the canvas
 	ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
