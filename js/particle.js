@@ -1,11 +1,25 @@
 const SIZE = 20;
+
+function drawText(ctx, str, pos) {
+	var fontsize = 10;
+	var fontface = 'verdana';
+	var lineHeight = fontsize * 1.286;
+	ctx.font = fontsize + 'px ' + fontface;
+	var textWidth = ctx.measureText(str).width;
+	ctx.textAlign = 'left';
+	ctx.textBaseline = 'top';
+	ctx.lineWidth = 1;
+	ctx.strokeStyle = 'black';
+	ctx.strokeText(str, pos.x - textWidth / 3, pos.y);
+}
 class Particle {
-	constructor(x, y) {
+	constructor(x, y, name = '') {
 		this.p = new Vector(x, y);
 		this.s = new Size(SIZE, SIZE);
 		this.vel = new Vector(0, 0);
 		this.for = new Vector(0, 0);
 		this.debug = '';
+		this.name = name;
 	}
 	right() {
 		return this.p.x + this.s.w;
@@ -52,5 +66,6 @@ class Particle {
 		ctx.fillStyle = 'yellow';
 		ctx.fillRect(this.p.x, this.p.y, this.s.w, this.s.h);
 		ctx.strokeRect(this.p.x, this.p.y, this.s.w, this.s.h);
+		drawText(ctx, this.name, this.p);
 	}
 }
