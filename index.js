@@ -1,10 +1,4 @@
-const MASS = 10;
-const LENG = 50;
-const APAR = LENG * 2;
-const STIF = 3;
-const KTIF = 10;
 const SIZE = 20;
-const DAMP = 0.9;
 
 function drawTextDebug(ctx, str, pos) {
 	var fontsize = 10;
@@ -62,8 +56,6 @@ class Size {
 class Particle {
 	constructor(x, y) {
 		this.p = new Vector(x, y);
-		this.m = MASS;
-		this.d = DAMP;
 		this.s = new Size(SIZE, SIZE);
 		this.vel = new Vector(0, 0);
 		this.for = new Vector(0, 0);
@@ -81,7 +73,9 @@ class Particle {
 	top() {
 		return this.p.y;
 	}
-	update() {
+	update(parameters) {
+		this.d = parameters.movementDrag;
+		this.m = parameters.nodeMass;
 		const ac = this.for.mults(1 / this.m);
 		this.vel = this.vel.add(ac.mults(1 / 2));
 		this.p = this.p.add(this.vel);
@@ -91,13 +85,15 @@ class Particle {
 		this.debug = `Vel {x: ${this.vel.x.toFixed(2)}, y:${this.vel.y.toFixed(2)}}`;
 	}
 
-	separate(me, others) {
+	separate(me, others, parameters) {
+		this.rLen = parameters.repelLength;
+		this.stif = parameters.repelForce;
 		for (let i = 0; i < others.length; i++) {
 			if (i !== me) {
 				const other = others[i];
 				const dist = this.p.dist(other.p);
-				if (dist < APAR) {
-					const force = KTIF * ((APAR - dist) / APAR);
+				if (dist < this.rLen) {
+					const force = this.stif * ((this.rLen - dist) / this.rLen);
 					const df = this.p.dir(other.p).norm().mults(force);
 					this.for = this.for.add(df.mults(-1));
 					other.for = other.for.add(df);
@@ -114,14 +110,13 @@ class Particle {
 	}
 }
 class Link {
-	constructor(p1, p2, defaultLength = LENG, stiffness = STIF) {
+	constructor(p1, p2) {
 		this.p1 = p1;
 		this.p2 = p2;
-
-		this.l = defaultLength;
-		this.st = stiffness;
 	}
-	update() {
+	update(parameters) {
+		this.l = parameters.linkLength;
+		this.st = parameters.linkForce;
 		//F = −kx
 		const force = this.st * this.stretch();
 		const df = this.dir().norm().mults(force);
@@ -153,7 +148,45 @@ class Link {
 		ctx.stroke();
 	}
 }
+
+function getSetSlider(sliderPrefix) {
+	var slider = document.getElementById(sliderPrefix + 'Slider');
+	var output = document.getElementById(sliderPrefix + 'Output');
+	var value = slider.value;
+	output.innerHTML = value;
+	return value;
+}
+function setSlider(sliderPrefix, value) {
+	var slider = document.getElementById(sliderPrefix + 'Slider');
+	slider.value = value;
+}
+function getParameters() {
+	var linkLength = getSetSlider('LinkLength');
+	var nodeMass = getSetSlider('NodeMass');
+	var repelLength = getSetSlider('RepelLength');
+	var linkForce = getSetSlider('LinkForce');
+	var repelForce = getSetSlider('RepelForce');
+	var movementDrag = 1 - getSetSlider('MovementDrag') / 100;
+	return {
+		linkLength,
+		linkForce,
+		nodeMass,
+		repelLength,
+		repelForce,
+		movementDrag,
+	};
+}
+function resetParameters() {
+	setSlider('LinkLength', 50);
+	setSlider('NodeMass', 10);
+	setSlider('RepelLength', 50);
+	setSlider('LinkForce', 3);
+	setSlider('RepelForce', 3);
+	setSlider('MovementDrag', 5);
+}
+
 document.addEventListener('DOMContentLoaded', function () {
+	resetParameters();
 	draw();
 });
 var particles = [
@@ -197,6 +230,7 @@ console.log(particles);
 
 var selParticle = null;
 function draw() {
+	const parameters = getParameters();
 	// Get canvas and context element
 	htmlCanvas = document.getElementById('c1');
 	ctx = htmlCanvas.getContext('2d');
@@ -206,10 +240,11 @@ function draw() {
 	ctx.canvas.height = window.innerHeight;
 
 	ctx.canvas.onmousedown = function (e) {
+		const x = e.x - ctx.canvas.offsetLeft;
 		for (const part of particles) {
 			if (
-				e.x > part.left() &&
-				e.x < part.right() &&
+				x > part.left() &&
+				x < part.right() &&
 				e.y > part.top() &&
 				e.y < part.bottom()
 			) {
@@ -225,7 +260,8 @@ function draw() {
 
 	ctx.canvas.onmousemove = function (e) {
 		if (!selParticle) return;
-		selParticle.p.x = e.x;
+		const x = e.x - ctx.canvas.offsetLeft;
+		selParticle.p.x = x;
 		selParticle.p.y = e.y;
 	};
 
@@ -234,13 +270,13 @@ function draw() {
 
 	// Update section
 	for (let i = 0; i < particles.length; i++) {
-		particles[i].separate(i, particles);
+		particles[i].separate(i, particles, parameters);
 	}
 	for (const link of links) {
-		link.update();
+		link.update(parameters);
 	}
 	for (const particle of particles) {
-		particle.update();
+		particle.update(parameters);
 	}
 
 	// Draw section

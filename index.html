@@ -5,6 +5,8 @@
 		<style>
 			html,
 			body {
+				font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande',
+					'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
 				width: 100%;
 				height: 100%;
 				margin: 0;
@@ -14,12 +16,154 @@
 			}
 			canvas {
 				position: absolute;
-				left: 0px;
+				left: 260px;
 				top: 0px;
+			}
+			/* The sidebar menu */
+			.sidenav {
+				height: 100%; /* Full-height: remove this if you want "auto" height */
+				width: 260px; /* Set the width of the sidebar */
+				position: fixed; /* Fixed Sidebar (stay in place on scroll) */
+				z-index: 1; /* Stay on top */
+				top: 0; /* Stay at the top */
+				left: 0;
+				background-color: #111; /* Black */
+				overflow-x: hidden; /* Disable horizontal scroll */
+				padding-top: 20px;
+				color: lightgray;
+			}
+
+			/* The navigation menu links */
+			.sidenav a {
+				padding: 6px 8px 6px 16px;
+				text-decoration: none;
+				font-size: 20px;
+				color: #818181;
+				display: block;
+			}
+
+			/* When you mouse over the navigation links, change their color */
+			.sidenav a:hover {
+				color: #f1f1f1;
+			}
+
+			/* Style page content */
+			.main {
+				margin-left: 260px; /* Same as the width of the sidebar */
+				padding: 0px 10px;
+			}
+
+			/* On smaller screens, where height is less than 450px, change the style of the sidebar (less padding and a smaller font size) */
+			@media screen and (max-height: 450px) {
+				.sidenav {
+					padding-top: 15px;
+				}
+				.sidenav a {
+					font-size: 18px;
+				}
+			}
+			.slider {
+				background: #d3d3d3; /* Grey background */
+				width: 90%;
+				opacity: 0.7; /* Set transparency (for mouse-over effects on hover) */
+				-webkit-transition: 0.2s; /* 0.2 seconds transition on hover */
+				transition: opacity 0.2s;
+			}
+
+			/* Mouse-over effects */
+			.slider:hover {
+				opacity: 1; /* Fully shown on mouse-over */
 			}
 		</style>
 	</head>
 	<body>
+		<div class="sidenav">
+			<div>
+				<p>powered by</p>
+				<a href="https://github.com/JGEsteves89">José Esteves</a>
+			</div>
+			<div>
+				<h1>Elastic Nodes</h1>
+			</div>
+			<div class="slidecontainer">
+				<div>
+					<span>Link length</span>
+					<span id="LinkLengthOutput"></span>
+				</div>
+				<input
+					type="range"
+					min="10"
+					max="300"
+					value="50"
+					class="slider"
+					id="LinkLengthSlider" />
+			</div>
+			<div class="slidecontainer">
+				<div>
+					<span>Link force</span>
+					<span id="LinkForceOutput"></span>
+				</div>
+				<input
+					type="range"
+					min="1"
+					max="50"
+					value="3"
+					class="slider"
+					id="LinkForceSlider" />
+			</div>
+			<div class="slidecontainer">
+				<div>
+					<span>Node mass</span>
+					<span id="NodeMassOutput"></span>
+				</div>
+				<input
+					type="range"
+					min="1"
+					max="300"
+					value="10"
+					class="slider"
+					id="NodeMassSlider" />
+			</div>
+			<div class="slidecontainer">
+				<div>
+					<span>Repel node length</span>
+					<span id="RepelLengthOutput"></span>
+				</div>
+				<input
+					type="range"
+					min="1"
+					max="500"
+					value="100"
+					class="slider"
+					id="RepelLengthSlider" />
+			</div>
+			<div class="slidecontainer">
+				<div>
+					<span>Repel node force</span>
+					<span id="RepelForceOutput"></span>
+				</div>
+				<input
+					type="range"
+					min="1"
+					max="50"
+					value="10"
+					class="slider"
+					id="RepelForceSlider" />
+			</div>
+			<div class="slidecontainer">
+				<div>
+					<span>Movement drag</span>
+					<span id="MovementDragOutput"></span>
+				</div>
+				<input
+					type="range"
+					min="1"
+					max="100"
+					value="90"
+					class="slider"
+					id="MovementDragSlider" />
+			</div>
+		</div>
 		<canvas id="c1"> </canvas>
 	</body>
 </html>
