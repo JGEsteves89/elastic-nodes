@@ -28,4 +28,7 @@ class Vector {
 	norm() {
 		return new Vector(this.x / this.len(), this.y / this.len());
 	}
+	equal(other) {
+		return this.x === other.x && this.y === other.y;
+	}
 }

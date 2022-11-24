@@ -1,7 +1,7 @@
 function getSetSlider(sliderPrefix) {
 	var slider = document.getElementById(sliderPrefix + 'Slider');
 	var output = document.getElementById(sliderPrefix + 'Output');
-	var value = slider.value;
+	var value = +slider.value;
 	output.innerHTML = value;
 	return value;
 }
