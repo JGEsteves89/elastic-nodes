@@ -8,7 +8,7 @@ On other hand, this simulation can be improved by trying to switch positions of 
 
 ## Live
 
-[✨Magic ✨](https://putlinkhere.com)
+[✨Magic ✨](https://jgesteves89.github.io/elastic-nodes/)
 
 ## License
 
