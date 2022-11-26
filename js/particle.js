@@ -9,7 +9,7 @@ function drawText(ctx, str, pos) {
 	ctx.textBaseline = 'top';
 	ctx.lineWidth = 1;
 	ctx.strokeStyle = 'black';
-	ctx.strokeText(str, pos.x - textWidth / 3, pos.y);
+	ctx.strokeText(str, SIZE / 2 + pos.x - textWidth / 2, pos.y + fontsize / 2);
 }
 class Particle {
 	constructor(x, y, name = '', fixed = false) {
@@ -58,10 +58,6 @@ class Particle {
 					this.p.y += Math.random();
 				}
 				let dist = this.p.dist(other.p);
-				if (this.p.equal(other.p)) {
-					this.p.x += Math.random();
-					this.p.y += Math.random();
-				}
 				if (dist < this.rLen) {
 					const force = this.stif * ((this.rLen - dist) / this.rLen);
 					const df = this.p.dir(other.p).norm().mults(force);
@@ -73,6 +69,11 @@ class Particle {
 	}
 
 	draw() {
+		if (this.fixed) {
+			ctx.strokeStyle = 'grey';
+		} else {
+			ctx.strokeStyle = 'black';
+		}
 		ctx.fillStyle = 'yellow';
 		ctx.fillRect(this.p.x, this.p.y, this.s.w, this.s.h);
 		ctx.strokeRect(this.p.x, this.p.y, this.s.w, this.s.h);

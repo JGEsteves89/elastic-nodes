@@ -12,6 +12,9 @@ class Vector {
 		return Math.sqrt(this.x * this.x + this.y * this.y);
 	}
 	dir(other) {
+		if (this.equal(other)) {
+			return new Vector(Math.random(), Math.random());
+		}
 		const dx = other.x - this.x;
 		const dy = other.y - this.y;
 		return new Vector(dx, dy);
@@ -22,6 +25,12 @@ class Vector {
 		}
 		return new Vector(this.x + d1, this.y + d2);
 	}
+	sub(d1, d2) {
+		if (d1.hasOwnProperty('x') && d1.hasOwnProperty('y')) {
+			return new Vector(this.x - d1.x, this.y - d1.y);
+		}
+		return new Vector(this.x - d1, this.y - d2);
+	}
 	mults(scaler) {
 		return new Vector(this.x * scaler, this.y * scaler);
 	}
@@ -30,5 +39,8 @@ class Vector {
 	}
 	equal(other) {
 		return this.x === other.x && this.y === other.y;
+	}
+	angle() {
+		return Math.atan2(this.y, this.x);
 	}
 }
